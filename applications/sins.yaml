@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sins
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://swipentap.github.io/charts
+    chart: sins
+    targetRevision: 1.0.70
+    helm:
+      releaseName: sins
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sins
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
