@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: certa
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://swipentap.github.io/charts
+    chart: certa
+    targetRevision: 1.0.0
+    helm:
+      releaseName: certa
+      values: |
+        certa:
+          service:
+            type: NodePort
+            port: 8080
+            nodePort: 30082
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: certa
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
