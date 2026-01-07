@@ -13,6 +13,13 @@ spec:
     targetRevision: 1.0.70
     helm:
       releaseName: sins
+      values: |
+        webui:
+          enabled: true
+          service:
+            type: NodePort
+            port: 80
+            nodePort: 30084
   destination:
     server: https://kubernetes.default.svc
     namespace: sins
