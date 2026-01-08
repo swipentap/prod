@@ -12,24 +12,8 @@ spec:
     chart: sins
     targetRevision: 1.0.70
     helm:
-      releaseName: sins
+      releaseName: sins-release
       values: |
-        sins:
-          service:
-            type: LoadBalancer
-            ports:
-              - name: dns-udp
-                port: 5353
-                targetPort: 53
-                protocol: UDP
-              - name: dns-tcp
-                port: 5353
-                targetPort: 53
-                protocol: TCP
-              - name: http
-                port: 8080
-                targetPort: 80
-                protocol: TCP
         webui:
           enabled: true
           service:
