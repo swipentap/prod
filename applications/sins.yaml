@@ -14,12 +14,30 @@ spec:
     helm:
       releaseName: sins
       values: |
+        sins:
+          service:
+            type: LoadBalancer
+            ports:
+              - name: dns-udp
+                port: 5353
+                targetPort: 53
+                protocol: UDP
+              - name: dns-tcp
+                port: 5353
+                targetPort: 53
+                protocol: TCP
+              - name: http
+                port: 8080
+                targetPort: 80
+                protocol: TCP
         webui:
           enabled: true
           service:
             type: NodePort
             port: 80
             nodePort: 30084
+          env:
+            ConnectionStrings__DefaultConnection: "Host=sins-postgresql:5432;Database=dns_server;Username=postgres;Password=postgres"
   destination:
     server: https://kubernetes.default.svc
     namespace: sins
