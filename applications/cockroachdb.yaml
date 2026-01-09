@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://charts.cockroachdb.com/
     chart: cockroachdb
-    targetRevision: 10.2.0
+    targetRevision: 19.0.4
     helm:
       releaseName: cockroachdb
       values: |
