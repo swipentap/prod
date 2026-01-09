@@ -8,11 +8,18 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://raw.githubusercontent.com/swipentap/charts/gh-pages
-    chart: cockroachdb-1.0.1.tgz
-    targetRevision: HEAD
+    repoURL: https://swipentap.github.io/charts
+    chart: cockroachdb
+    targetRevision: 1.0.1
     helm:
       releaseName: cockroachdb
+      values: |
+        cockroachdb:
+          replicaCount: 3
+          persistence:
+            enabled: true
+            size: 20Gi
+            storageClass: "local-path"
   destination:
     server: https://kubernetes.default.svc
     namespace: cockroachdb
