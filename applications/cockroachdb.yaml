@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://swipentap.github.io/charts
     chart: cockroachdb
-    targetRevision: 1.0.7
+    targetRevision: 1.0.8
     helm:
       releaseName: cockroachdb
       values: |
