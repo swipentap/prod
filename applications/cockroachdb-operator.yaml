@@ -8,14 +8,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://charts.cockroachdb.com/
-    chart: cockroachdb-operator
-    targetRevision: 2.0.0
-    helm:
-      releaseName: cockroachdb-operator
+    repoURL: https://raw.githubusercontent.com/cockroachdb/cockroach-operator/v2.18.2/manifests
+    targetRevision: ""
   destination:
     server: https://kubernetes.default.svc
-    namespace: cockroachdb
+    namespace: cockroach-operator-system
   syncPolicy:
     automated:
       prune: true
