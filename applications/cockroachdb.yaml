@@ -23,10 +23,12 @@ spec:
   ignoreDifferences:
   - group: crdb.cockroachlabs.com
     kind: CrdbCluster
-    jsonPointers:
-    - /spec/dataStore/pvc/source
-    - /spec/grpcPort
-    - /spec/httpPort
-    - /spec/image/pullPolicy
-    - /spec/dataStore/supportsAutoResize
-    - /status
+    jqPathExpressions:
+    - .spec.dataStore.pvc.source
+    - .spec.grpcPort
+    - .spec.httpPort
+    - .spec.image.pullPolicy
+    - .spec.dataStore.supportsAutoResize
+    - .spec.sqlPort
+    - .status
+    - .metadata.annotations
