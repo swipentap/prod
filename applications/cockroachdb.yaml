@@ -23,8 +23,6 @@ spec:
   ignoreDifferences:
   - group: crdb.cockroachlabs.com
     kind: CrdbCluster
-    managedFieldsManagers:
-    - cockroach-operator
     jsonPointers:
     - /spec/dataStore/pvc/source
     - /spec/dataStore/supportsAutoResize
@@ -33,3 +31,5 @@ spec:
     - /metadata/annotations/crdb.io~1containerimage
     - /metadata/annotations/crdb.io~1version
     - /metadata/annotations/argocd.argoproj.io~1tracking-id
+    - /metadata/generation
+    - /metadata/resourceVersion
