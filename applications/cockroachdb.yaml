@@ -23,12 +23,13 @@ spec:
   ignoreDifferences:
   - group: crdb.cockroachlabs.com
     kind: CrdbCluster
+    managedFieldsManagers:
+    - cockroach-operator
     jqPathExpressions:
-    - .spec.dataStore.pvc.source
-    - .spec.grpcPort
-    - .spec.httpPort
+    - .spec.dataStore
     - .spec.image.pullPolicy
-    - .spec.dataStore.supportsAutoResize
-    - .spec.sqlPort
     - .status
     - .metadata.annotations
+    - .metadata.managedFields
+    - .metadata.resourceVersion
+    - .metadata.generation
