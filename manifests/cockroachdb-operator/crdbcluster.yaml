@@ -26,3 +26,6 @@ spec:
       cpu: "2"
       memory: 4Gi
   maxUnavailable: 1
+  grpcPort: 26258
+  httpPort: 8080
+  sqlPort: 26257
