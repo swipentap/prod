@@ -1,0 +1,27 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: cockroachdb
+  namespace: cockroachdb
+spec:
+  image:
+    name: cockroachdb/cockroach:v25.2.4
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: "local-path"
+        volumeMode: Filesystem
+  nodes: 3
+  tlsEnabled: false
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi

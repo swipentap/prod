@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cockroachdb-operator
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.cockroachdb.com/
+    chart: cockroachdb-operator
+    targetRevision: 2.0.0
+    helm:
+      releaseName: cockroachdb-operator
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cockroachdb
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
