@@ -6,8 +6,11 @@ metadata:
 spec:
   image:
     name: cockroachdb/cockroach:v25.2.4
+    pullPolicy: IfNotPresent
   dataStore:
     pvc:
+      source:
+        claimName: ""
       spec:
         accessModes:
           - ReadWriteOnce
@@ -16,6 +19,7 @@ spec:
             storage: 20Gi
         storageClassName: "local-path"
         volumeMode: Filesystem
+    supportsAutoResize: false
   nodes: 3
   tlsEnabled: false
   resources:
