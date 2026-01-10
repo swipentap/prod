@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/swipentap/prod.git
-    path: argocd-prod/manifests/cockroachdb-operator
+    path: manifests/cockroachdb-operator
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc
