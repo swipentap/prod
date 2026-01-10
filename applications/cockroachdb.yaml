@@ -25,11 +25,11 @@ spec:
     kind: CrdbCluster
     managedFieldsManagers:
     - cockroach-operator
-    jqPathExpressions:
-    - .spec.dataStore
-    - .spec.image.pullPolicy
-    - .status
-    - .metadata.annotations
-    - .metadata.managedFields
-    - .metadata.resourceVersion
-    - .metadata.generation
+    jsonPointers:
+    - /spec/dataStore/pvc/source
+    - /spec/dataStore/supportsAutoResize
+    - /spec/image/pullPolicy
+    - /status
+    - /metadata/annotations/crdb.io~1containerimage
+    - /metadata/annotations/crdb.io~1version
+    - /metadata/annotations/argocd.argoproj.io~1tracking-id
