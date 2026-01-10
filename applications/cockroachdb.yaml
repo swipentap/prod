@@ -23,13 +23,11 @@ spec:
   ignoreDifferences:
   - group: crdb.cockroachlabs.com
     kind: CrdbCluster
-    jsonPointers:
-    - /spec/dataStore/pvc/source
-    - /spec/dataStore/supportsAutoResize
-    - /spec/image/pullPolicy
-    - /status
-    - /metadata/annotations/crdb.io~1containerimage
-    - /metadata/annotations/crdb.io~1version
-    - /metadata/annotations/argocd.argoproj.io~1tracking-id
-    - /metadata/generation
-    - /metadata/resourceVersion
+    jqPathExpressions:
+    - .status
+    - .metadata.annotations."crdb.io/containerimage"
+    - .metadata.annotations."crdb.io/version"
+    - .metadata.annotations."argocd.argoproj.io/tracking-id"
+    - .metadata.generation
+    - .metadata.resourceVersion
+    - .metadata.managedFields
