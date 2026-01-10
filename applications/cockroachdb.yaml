@@ -8,18 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://charts.cockroachdb.com/
-    chart: cockroachdb
-    targetRevision: 19.0.4
-    helm:
-      releaseName: cockroachdb
-      values: |
-        tls:
-          enabled: false
-        storage:
-          persistentVolume:
-            size: 20Gi
-            storageClass: "local-path"
+    repoURL: https://github.com/swipentap/prod.git
+    path: argocd-prod/manifests/cockroachdb-operator
+    targetRevision: main
   destination:
     server: https://kubernetes.default.svc
     namespace: cockroachdb
@@ -29,5 +20,3 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
-    - PrunePropagationPolicy=foreground
-    - PruneLast=true
