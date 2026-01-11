@@ -23,10 +23,10 @@ spec:
             port: 80
             nodePort: 30084
           env:
-            ConnectionStrings__DefaultConnection: "Host=cockroachdb-public.cockroachdb:26257;Database=dns_server;Username=root;Password=cockroach;SSL Mode=Require;"
+            ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=dns_server;Username=yugabyte;Password=yugabyte;"
         sins:
           env:
-            ConnectionStrings__DefaultConnection: "Host=cockroachdb-public.cockroachdb:26257;Database=dns_server;Username=root;Password=cockroach;SSL Mode=Require;"
+            ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=dns_server;Username=yugabyte;Password=yugabyte;"
   destination:
     server: https://kubernetes.default.svc
     namespace: sins

@@ -22,7 +22,7 @@ spec:
             port: 8080
             nodePort: 30082
           env:
-            ConnectionStrings__DefaultConnection: "Host=cockroachdb-public.cockroachdb:26257;Database=certa;Username=certa;Password=certa123;SSL Mode=Require;"
+            ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=certa;Username=certa;Password=certa123;"
   destination:
     server: https://kubernetes.default.svc
     namespace: certa
