@@ -21,6 +21,7 @@ spec:
         volumeMode: Filesystem
     supportsAutoResize: false
   nodes: 3
+  tlsEnabled: true
   resources:
     requests:
       cpu: "1"
