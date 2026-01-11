@@ -17,6 +17,9 @@ spec:
         postgresql:
           enabled: false
         certa:
+          image:
+            repository: judyandiealvarez/certa
+            tag: "latest"
           service:
             type: NodePort
             port: 8080
