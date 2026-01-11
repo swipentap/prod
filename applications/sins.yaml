@@ -18,6 +18,9 @@ spec:
           enabled: false
         webui:
           enabled: true
+          image:
+            repository: judyandiealvarez/sins
+            tag: "1.0.74"
           service:
             type: NodePort
             port: 80
@@ -25,6 +28,9 @@ spec:
           env:
             ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=dns_server;Username=yugabyte;Password=yugabyte;"
         sins:
+          image:
+            repository: judyandiealvarez/sins
+            tag: "1.0.74"
           env:
             ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=dns_server;Username=yugabyte;Password=yugabyte;"
   destination:
