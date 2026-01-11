@@ -14,12 +14,17 @@ spec:
     helm:
       releaseName: sins-release
       values: |
+        postgresql:
+          enabled: false
         webui:
           enabled: true
           service:
             type: NodePort
             port: 80
             nodePort: 30084
+          env:
+            ConnectionStrings__DefaultConnection: "Host=cockroachdb-public.cockroachdb:26257;Database=dns_server;Username=root;Password=cockroach;SSL Mode=Require;"
+        sins:
           env:
             ConnectionStrings__DefaultConnection: "Host=cockroachdb-public.cockroachdb:26257;Database=dns_server;Username=root;Password=cockroach;SSL Mode=Require;"
   destination:
