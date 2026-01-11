@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://swipentap.github.io/charts
     chart: sins
-    targetRevision: 1.0.71
+    targetRevision: 1.0.72
     helm:
       releaseName: sins-release
       values: |
