@@ -19,7 +19,7 @@ spec:
         certa:
           image:
             repository: judyandiealvarez/certa
-            tag: "latest"
+            tag: "1.0.1"
           service:
             type: NodePort
             port: 8080
