@@ -21,7 +21,7 @@ spec:
             port: 80
             nodePort: 30084
           env:
-            ConnectionStrings__DefaultConnection: "Host=sins-postgresql:5432;Database=dns_server;Username=postgres;Password=postgres"
+            ConnectionStrings__DefaultConnection: "Host=cockroachdb-public.cockroachdb:26257;Database=dns_server;Username=root;Password=cockroach;SSL Mode=Require;"
   destination:
     server: https://kubernetes.default.svc
     namespace: sins

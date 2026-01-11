@@ -19,6 +19,8 @@ spec:
             type: NodePort
             port: 8080
             nodePort: 30082
+          env:
+            ConnectionStrings__DefaultConnection: "Host=cockroachdb-public.cockroachdb:26257;Database=certa;Username=certa;Password=certa123;SSL Mode=Require;"
   destination:
     server: https://kubernetes.default.svc
     namespace: certa
