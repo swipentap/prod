@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://swipentap.github.io/charts
     chart: sins
-    targetRevision: 1.0.74
+    targetRevision: 1.0.75
     helm:
       releaseName: sins-release
       values: |
@@ -38,6 +38,13 @@ spec:
             tls: []
           env:
             ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=dns_server;Username=yugabyte;Password=yugabyte;"
+          dbInit:
+            enabled: true
+            dbHost: yb-tservers.yugabytedb
+            dbPort: "5433"
+            adminUser: yugabyte
+            adminPassword: yugabyte
+            appDatabase: dns_server
         sins:
           image:
             repository: judyandiealvarez/sins
