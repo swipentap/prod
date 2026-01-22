@@ -10,9 +10,22 @@ spec:
   source:
     repoURL: https://swipentap.github.io/charts
     chart: ollama
-    targetRevision: 0.1.0
+    targetRevision: 0.1.1
     helm:
       releaseName: ollama
+      values: |
+        webui:
+          ingress:
+            enabled: true
+            className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+            hosts:
+              - host: ollama.dev.net
+                paths:
+                  - path: /
+                    pathType: Prefix
+            tls: []
   destination:
     server: https://kubernetes.default.svc
     namespace: ollama

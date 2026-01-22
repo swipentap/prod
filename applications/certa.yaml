@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://swipentap.github.io/charts
     chart: certa
-    targetRevision: 1.0.1
+    targetRevision: 1.0.2
     helm:
       releaseName: certa
       values: |
@@ -24,6 +24,17 @@ spec:
             type: NodePort
             port: 8080
             nodePort: 30082
+          ingress:
+            enabled: true
+            className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+            hosts:
+              - host: certa.dev.net
+                paths:
+                  - path: /
+                    pathType: Prefix
+            tls: []
           env:
             ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=certa;Username=certa;Password=certa123;"
   destination:

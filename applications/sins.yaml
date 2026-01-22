@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://swipentap.github.io/charts
     chart: sins
-    targetRevision: 1.0.73
+    targetRevision: 1.0.74
     helm:
       releaseName: sins-release
       values: |
@@ -25,6 +25,17 @@ spec:
             type: NodePort
             port: 80
             nodePort: 30084
+          ingress:
+            enabled: true
+            className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+            hosts:
+              - host: ns.dev.net
+                paths:
+                  - path: /
+                    pathType: Prefix
+            tls: []
           env:
             ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=dns_server;Username=yugabyte;Password=yugabyte;"
         sins:
