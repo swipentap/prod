@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/swipentap/prod.git
     targetRevision: main
-    path: argocd-prod/manifests
+    path: manifests
     directory:
       recurse: false
       include: yugabytedb-ingress.yaml
