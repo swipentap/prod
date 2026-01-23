@@ -5517,7 +5517,7 @@ spec:
                     type:
                       description: |-
                         type of condition in CamelCase or in foo.example.com/CamelCase.
----
+                        ---
                         Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
                         useful (see .node.status.conditions), the ability to deconflict is important.
                         The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
@@ -6000,6 +6000,78 @@ spec:
     storage: true
     subresources: {}
 ---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: poolers.postgresql.cnpg.io
+spec:
+  group: postgresql.cnpg.io
+  names:
+    kind: Pooler
+    listKind: PoolerList
+    plural: poolers
+    singular: pooler
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .spec.cluster.name
+      name: Cluster
+      type: string
+    - jsonPath: .spec.type
+      name: Type
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Pooler is the Schema for the poolers API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              Specification of the desired behavior of the Pooler.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+            properties:
+              cluster:
+                description: |-
+                  This is the cluster reference on which the Pooler will work.
+                  Pooler name should never match with any cluster name within the same namespace.
+                properties:
+                  name:
+                    description: Name of the referent.
+                    type: string
+                required:
+                - name
+                type: object
+              deploymentStrategy:
+                description: The deployment strategy to use for pgbouncer to replace
+                  existing pods with new ones
+                properties:
+                  rollingUpdate:
+                    description: |-
+                      Rolling update config params. Present only if DeploymentStrategyType =
+                      RollingUpdate.
+                      ---
                       TODO: Update this to follow our convention for oneOf, whatever we decide it
                       to be.
                     properties:
@@ -13330,7 +13402,7 @@ spec:
                                 used for system agents or other privileged things that are allowed
                                 to see the host machine. Most containers will NOT need this.
                                 More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
----
+                                ---
                                 TODO(jonesdl) We need to restrict who can use host directory mounts and who can/can not
                                 mount host directories as read/write.
                               properties:
@@ -15451,5 +15523,3 @@ webhooks:
     resources:
     - scheduledbackups
   sideEffects: None
-
----
