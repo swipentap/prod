@@ -34,6 +34,8 @@ spec:
       name: Primary
       type: string
     name: v1
+    served: true
+    storage: true
     schema:
       openAPIV3Schema:
         description: Cluster is the Schema for the PostgreSQL API
