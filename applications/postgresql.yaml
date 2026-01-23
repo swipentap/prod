@@ -76,3 +76,10 @@ spec:
       - .spec.postgresql.parameters.wal_receiver_timeout
       - .spec.postgresql.parameters.wal_sender_timeout
       - .spec.postgresql.syncReplicaElectionConstraint
+      - .spec.primaryUpdateMethod
+      - .spec.primaryUpdateStrategy
+      - .spec.replicationSlots
+      - .spec.smartShutdownTimeout
+      - .spec.startDelay
+      - .spec.stopDelay
+      - .spec.storage.resizeInUseVolumes
