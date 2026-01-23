@@ -5,6 +5,8 @@ metadata:
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   project: default
   source:
@@ -13,6 +15,7 @@ spec:
     path: manifests/cloudnativepg-operator
     directory:
       recurse: true
+      exclude: '*.md'
   destination:
     server: https://kubernetes.default.svc
     namespace: cnpg-system
@@ -22,3 +25,4 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+    - ServerSideApply=true
