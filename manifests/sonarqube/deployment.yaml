@@ -20,11 +20,16 @@ spec:
         - /bin/sh
         - -c
         - |
-          until PGPASSWORD="postgres123" psql -h postgresql-rw.postgresql.svc.cluster.local -p 5432 -U postgres -d sonar -c '\q' 2>/dev/null; do
+          DB_PASSWORD=$(cat /etc/postgresql-secret/password)
+          until PGPASSWORD="$DB_PASSWORD" psql -h postgresql-rw.postgresql.svc.cluster.local -p 5432 -U postgres -d sonar -c '\q' 2>/dev/null; do
             echo "Waiting for database to be ready..."
             sleep 2
           done
           echo "Database is ready!"
+        volumeMounts:
+        - name: postgresql-secret
+          mountPath: /etc/postgresql-secret
+          readOnly: true
       containers:
       - name: sonarqube
         image: sonarqube:latest
@@ -35,9 +40,15 @@ spec:
         - name: SONAR_JDBC_URL
           value: jdbc:postgresql://postgresql-rw.postgresql.svc.cluster.local:5432/sonar
         - name: SONAR_JDBC_USERNAME
-          value: postgres
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-credentials
+              key: username
         - name: SONAR_JDBC_PASSWORD
-          value: postgres123
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-credentials
+              key: password
         volumeMounts:
         - name: sonarqube-data
           mountPath: /opt/sonarqube/data
@@ -59,3 +70,6 @@ spec:
         emptyDir: {}
       - name: sonarqube-logs
         emptyDir: {}
+      - name: postgresql-secret
+        secret:
+          secretName: postgresql-credentials
