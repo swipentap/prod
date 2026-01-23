@@ -29,6 +29,8 @@ spec:
     limits:
       memory: "1Gi"
       cpu: "1"
+  superuserSecret:
+    name: postgresql-credentials
   bootstrap:
     initdb:
       database: postgres
