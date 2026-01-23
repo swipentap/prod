@@ -3,6 +3,8 @@ kind: Job
 metadata:
   name: sonarqube-db-init
   namespace: sonarqube
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   template:
     spec:
