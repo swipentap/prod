@@ -21,7 +21,8 @@ spec:
         - -c
         - |
           DB_PASSWORD=$(cat /etc/postgresql-secret/password)
-          until PGPASSWORD="$DB_PASSWORD" psql -h postgresql-rw.postgresql.svc.cluster.local -p 5432 -U postgres -d sonar -c '\q' 2>/dev/null; do
+          DB_USER=$(cat /etc/postgresql-secret/username)
+          until PGPASSWORD="$DB_PASSWORD" psql -h postgresql-rw.postgresql.svc.cluster.local -p 5432 -U "$DB_USER" -d sonar -c '\q' 2>/dev/null; do
             echo "Waiting for database to be ready..."
             sleep 2
           done
