@@ -32,15 +32,10 @@ spec:
           done
           echo "Database is ready!"
           
-          echo "Creating database $DB_NAME if it doesn't exist..."
+          echo "Creating database $DB_NAME if it doesn't exist with owner $DB_USER..."
           PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres <<EOF
           SELECT 'CREATE DATABASE $DB_NAME OWNER $DB_USER'
           WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
-          EOF
-          
-          echo "Granting all privileges on database $DB_NAME to $DB_USER..."
-          PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres <<EOF
-          GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
           EOF
           
           echo "Database initialization for SonarQube completed."
