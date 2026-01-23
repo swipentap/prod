@@ -21,7 +21,7 @@ spec:
           
           DB_HOST="postgresql-rw.postgresql.svc.cluster.local"
           DB_PORT="5432"
-          DB_USER=$(cat /etc/postgresql-secret/username)
+          DB_USER="sonarqube"
           DB_PASSWORD=$(cat /etc/postgresql-secret/password)
           DB_NAME="sonar"
           
@@ -36,6 +36,11 @@ spec:
           PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres <<EOF
           SELECT 'CREATE DATABASE $DB_NAME OWNER $DB_USER'
           WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
+          EOF
+          
+          echo "Granting all privileges on database $DB_NAME to $DB_USER..."
+          PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres <<EOF
+          GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
           EOF
           
           echo "Database initialization for SonarQube completed."

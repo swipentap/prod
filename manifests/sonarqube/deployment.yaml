@@ -23,7 +23,7 @@ spec:
         - -c
         - |
           DB_PASSWORD=$(cat /etc/postgresql-secret/password)
-          DB_USER=$(cat /etc/postgresql-secret/username)
+          DB_USER="sonarqube"
           until PGPASSWORD="$DB_PASSWORD" psql -h postgresql-rw.postgresql.svc.cluster.local -p 5432 -U "$DB_USER" -d sonar -c '\q' 2>/dev/null; do
             echo "Waiting for database to be ready..."
             sleep 2
@@ -43,10 +43,7 @@ spec:
         - name: SONAR_JDBC_URL
           value: jdbc:postgresql://postgresql-rw.postgresql.svc.cluster.local:5432/sonar
         - name: SONAR_JDBC_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: postgresql-credentials
-              key: username
+          value: sonarqube
         - name: SONAR_JDBC_PASSWORD
           valueFrom:
             secretKeyRef:

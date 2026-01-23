@@ -34,6 +34,17 @@ spec:
   enableSuperuserAccess: true
   superuserSecret:
     name: postgresql-credentials
+  managed:
+    roles:
+    - name: sonarqube
+      passwordSecret:
+        name: postgresql-credentials
+        key: password
+      inherit: true
+      login: true
+      superuser: false
+      replication: false
+      bypassRLS: false
   bootstrap:
     initdb:
       database: postgres
