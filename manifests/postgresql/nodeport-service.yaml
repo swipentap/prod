@@ -7,7 +7,7 @@ spec:
   type: NodePort
   selector:
     postgresql.cnpg.io/cluster: postgresql
-    postgresql.cnpg.io/instanceRole: primary
+    role: primary
   ports:
   - port: 5432
     targetPort: 5432
