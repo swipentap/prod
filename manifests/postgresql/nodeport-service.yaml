@@ -6,7 +6,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    postgresql.cnpg.io/cluster: postgresql
+    cnpg.io/cluster: postgresql
     role: primary
   ports:
   - port: 5432
