@@ -1,3 +1,6 @@
+# CloudNativePG operator is installed directly via kubectl
+# This application is kept for reference but operator is managed outside ArgoCD
+# due to CRD annotation size limitations with ArgoCD tracking
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -5,8 +8,6 @@ metadata:
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   project: default
   source:
@@ -14,15 +15,10 @@ spec:
     targetRevision: main
     path: manifests/cloudnativepg-operator
     directory:
-      recurse: true
-      exclude: '*.md'
+      recurse: false
   destination:
     server: https://kubernetes.default.svc
     namespace: cnpg-system
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
     - CreateNamespace=true
-    - ServerSideApply=true
