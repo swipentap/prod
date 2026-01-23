@@ -8,12 +8,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/cloudnative-pg/cloudnative-pg
-    targetRevision: release-1.23
-    path: config
+    repoURL: https://github.com/swipentap/prod.git
+    targetRevision: main
+    path: manifests/cloudnativepg-operator
     directory:
       recurse: true
-      include: '*.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: cnpg-system
