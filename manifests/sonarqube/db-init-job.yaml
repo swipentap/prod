@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sonarqube-db-init
+  namespace: sonarqube
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: db-init
+        image: postgres:15-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Initializing database for SonarQube..."
+          
+          DB_HOST="postgresql-rw.postgresql.svc.cluster.local"
+          DB_PORT="5432"
+          DB_USER="postgres"
+          DB_PASSWORD="postgres123"
+          DB_NAME="sonar"
+          
+          echo "Waiting for database to be ready..."
+          until PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c '\q' 2>/dev/null; do
+            echo "Database is not ready yet. Waiting..."
+            sleep 2
+          done
+          echo "Database is ready!"
+          
+          echo "Creating database $DB_NAME if it doesn't exist..."
+          PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres <<EOF
+          SELECT 'CREATE DATABASE $DB_NAME OWNER $DB_USER'
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
+          EOF
+          
+          echo "Database initialization for SonarQube completed."
