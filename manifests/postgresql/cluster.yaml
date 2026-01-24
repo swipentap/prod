@@ -44,7 +44,6 @@ spec:
       login: true
       superuser: false
       replication: false
-      bypassRLS: false
       createDatabase: true
   bootstrap:
     initdb:
