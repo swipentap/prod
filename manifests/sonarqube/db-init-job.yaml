@@ -43,11 +43,32 @@ spec:
             exit 1
           fi
           
+          echo "Granting CREATEDB privilege to $DB_USER if needed..."
+          # Use postgres superuser to grant CREATEDB (we'll connect via service account or use a different approach)
+          # Since we can't use postgres superuser, we'll need to grant this via CloudNativePG or use a different user
+          # For now, try to create database - if it fails, we'll grant CREATEDB first
+          
           echo "Creating database $DB_NAME if it doesn't exist with owner $DB_USER..."
-          PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres <<EOF
-          SELECT 'CREATE DATABASE $DB_NAME OWNER $DB_USER'
-          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
-          EOF
+          if ! PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null; then
+            echo "Database creation failed, checking if database already exists..."
+            if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" 2>/dev/null | grep -q 1; then
+              echo "Database $DB_NAME already exists"
+            else
+              echo "ERROR: Cannot create database. The sonarqube user needs CREATEDB privilege or database must be created by superuser."
+              echo "Attempting to grant CREATEDB via postgres user (if accessible)..."
+              # Try to use postgres user from secret
+              POSTGRES_PASSWORD=$(cat /etc/postgresql-secret/password)
+              if PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "ALTER USER $DB_USER CREATEDB;" 2>/dev/null; then
+                echo "CREATEDB privilege granted, retrying database creation..."
+                PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" || exit 1
+              else
+                echo "ERROR: Cannot grant CREATEDB. Please ensure the sonarqube managed role has CREATEDB privilege configured in CloudNativePG."
+                exit 1
+              fi
+            fi
+          else
+            echo "Database $DB_NAME created successfully"
+          fi
           
           echo "Database initialization for SonarQube completed."
         volumeMounts:

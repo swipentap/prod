@@ -44,7 +44,6 @@ spec:
       login: true
       superuser: false
       replication: false
-      createDatabase: true
   bootstrap:
     initdb:
       database: postgres
