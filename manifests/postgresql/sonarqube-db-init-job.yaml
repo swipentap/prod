@@ -6,11 +6,12 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded,before-hook-creation
 spec:
   template:
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
+      backoffLimit: 3
       serviceAccountName: db-init
       containers:
       - name: db-init
