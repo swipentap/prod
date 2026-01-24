@@ -38,7 +38,14 @@ spec:
           env:
             ConnectionStrings__DefaultConnection: "Host=postgresql-rw.postgresql.svc.cluster.local:5432;Database=certa;Username=certa;Password=certa123;"
           dbInit:
-            enabled: false
+            enabled: true
+            dbHost: postgresql-rw.postgresql.svc.cluster.local
+            dbPort: "5432"
+            adminUser: postgres
+            adminPassword: postgres123
+            appUser: certa
+            appPassword: certa123
+            appDatabase: certa
   destination:
     server: https://kubernetes.default.svc
     namespace: certa

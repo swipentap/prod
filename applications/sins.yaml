@@ -39,7 +39,12 @@ spec:
           env:
             ConnectionStrings__DefaultConnection: "Host=postgresql-rw.postgresql.svc.cluster.local:5432;Database=dns_server;Username=sins;Password=sins123;"
           dbInit:
-            enabled: false
+            enabled: true
+            dbHost: postgresql-rw.postgresql.svc.cluster.local
+            dbPort: "5432"
+            adminUser: postgres
+            adminPassword: postgres123
+            appDatabase: dns_server
         sins:
           image:
             repository: judyandiealvarez/sins
