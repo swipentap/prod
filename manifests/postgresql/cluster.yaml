@@ -38,7 +38,7 @@ spec:
     roles:
     - name: sonarqube
       passwordSecret:
-        name: postgresql-credentials
+        name: sonarqube-role-password
       inherit: true
       login: true
       superuser: false
