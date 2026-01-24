@@ -26,36 +26,28 @@ spec:
           SONARQUBE_PASSWORD=$(cat /etc/postgresql-secret/password)
           DB_NAME="sonar"
           
-          echo "Waiting for PostgreSQL primary pod to be ready..."
-          MAX_WAIT=300
-          ELAPSED=0
-          PRIMARY_POD=""
-          while [ $ELAPSED -lt $MAX_WAIT ]; do
-            PRIMARY_POD=$(kubectl get pods -n postgresql -l postgresql.cnpg.io/cluster=postgresql -o jsonpath='{.items[?(@.metadata.labels.role=="primary")].metadata.name}' 2>/dev/null | head -1)
-          if [ -z "$PRIMARY_POD" ]; then
-            PRIMARY_POD=$(kubectl get pods -n postgresql -l postgresql.cnpg.io/cluster=postgresql --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-          fi
+          echo "Finding PostgreSQL primary pod..."
+          PRIMARY_POD=$(kubectl get pods -n postgresql -l cnpg.io/cluster=postgresql,role=primary -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
           if [ -z "$PRIMARY_POD" ]; then
             PRIMARY_POD="postgresql-1"
           fi
-            if [ -n "$PRIMARY_POD" ]; then
-              if kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c '\q' 2>/dev/null; then
-                echo "PostgreSQL primary pod $PRIMARY_POD is ready!"
-                break
-              fi
+          echo "Using PostgreSQL pod: $PRIMARY_POD"
+          
+          echo "Waiting for PostgreSQL pod to be ready..."
+          MAX_WAIT=300
+          ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            if kubectl get pod -n postgresql "$PRIMARY_POD" -o jsonpath='{.status.phase}' 2>/dev/null | grep -q Running; then
+              echo "PostgreSQL pod $PRIMARY_POD is running!"
+              break
             fi
-            echo "Waiting for PostgreSQL primary... (${ELAPSED}s/${MAX_WAIT}s)"
+            echo "Waiting for PostgreSQL pod... (${ELAPSED}s/${MAX_WAIT}s)"
             sleep 2
             ELAPSED=$((ELAPSED + 2))
           done
           
-          if [ -z "$PRIMARY_POD" ]; then
-            echo "ERROR: Could not find PostgreSQL primary pod"
-            exit 1
-          fi
-          
           if [ $ELAPSED -ge $MAX_WAIT ]; then
-            echo "ERROR: Timeout waiting for PostgreSQL primary"
+            echo "ERROR: Timeout waiting for PostgreSQL pod"
             exit 1
           fi
           
