@@ -21,54 +21,56 @@ spec:
           
           DB_HOST="postgresql-rw.postgresql.svc.cluster.local"
           DB_PORT="5432"
-          DB_USER="sonarqube"
-          DB_PASSWORD=$(cat /etc/postgresql-secret/password)
+          POSTGRES_USER="postgres"
+          POSTGRES_PASSWORD=$(cat /etc/postgresql-secret/password)
+          SONARQUBE_USER="sonarqube"
+          SONARQUBE_PASSWORD=$(cat /etc/postgresql-secret/password)
           DB_NAME="sonar"
           
-          echo "Waiting for PostgreSQL cluster and managed role to be ready..."
+          echo "Waiting for PostgreSQL cluster to be ready..."
           MAX_WAIT=300
           ELAPSED=0
           while [ $ELAPSED -lt $MAX_WAIT ]; do
-            if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c '\q' 2>/dev/null; then
-              echo "Database and managed role are ready!"
+            if PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$POSTGRES_USER" -d postgres -c '\q' 2>/dev/null; then
+              echo "PostgreSQL cluster is ready!"
               break
             fi
-            echo "Waiting for database and managed role... (${ELAPSED}s/${MAX_WAIT}s)"
+            echo "Waiting for PostgreSQL cluster... (${ELAPSED}s/${MAX_WAIT}s)"
             sleep 5
             ELAPSED=$((ELAPSED + 5))
           done
           
           if [ $ELAPSED -ge $MAX_WAIT ]; then
-            echo "ERROR: Timeout waiting for database and managed role to be ready"
+            echo "ERROR: Timeout waiting for PostgreSQL cluster to be ready"
             exit 1
           fi
           
-          echo "Granting CREATEDB privilege to $DB_USER if needed..."
-          # Use postgres superuser to grant CREATEDB (we'll connect via service account or use a different approach)
-          # Since we can't use postgres superuser, we'll need to grant this via CloudNativePG or use a different user
-          # For now, try to create database - if it fails, we'll grant CREATEDB first
-          
-          echo "Creating database $DB_NAME if it doesn't exist with owner $DB_USER..."
-          if ! PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null; then
-            echo "Database creation failed, checking if database already exists..."
-            if PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" 2>/dev/null | grep -q 1; then
-              echo "Database $DB_NAME already exists"
-            else
-              echo "ERROR: Cannot create database. The sonarqube user needs CREATEDB privilege or database must be created by superuser."
-              echo "Attempting to grant CREATEDB via postgres user (if accessible)..."
-              # Try to use postgres user from secret
-              POSTGRES_PASSWORD=$(cat /etc/postgresql-secret/password)
-              if PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "ALTER USER $DB_USER CREATEDB;" 2>/dev/null; then
-                echo "CREATEDB privilege granted, retrying database creation..."
-                PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" || exit 1
-              else
-                echo "ERROR: Cannot grant CREATEDB. Please ensure the sonarqube managed role has CREATEDB privilege configured in CloudNativePG."
-                exit 1
-              fi
+          echo "Waiting for managed role $SONARQUBE_USER to be ready..."
+          ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$SONARQUBE_USER" -d postgres -c '\q' 2>/dev/null; then
+              echo "Managed role $SONARQUBE_USER is ready!"
+              break
             fi
-          else
-            echo "Database $DB_NAME created successfully"
+            echo "Waiting for managed role $SONARQUBE_USER... (${ELAPSED}s/${MAX_WAIT}s)"
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+          
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "WARNING: Managed role $SONARQUBE_USER not ready, will create database with postgres user"
           fi
+          
+          echo "Creating database $DB_NAME if it doesn't exist with owner $SONARQUBE_USER..."
+          PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$POSTGRES_USER" -d postgres <<EOF
+          SELECT 'CREATE DATABASE $DB_NAME OWNER $SONARQUBE_USER'
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
+          EOF
+          
+          echo "Granting all privileges on database $DB_NAME to $SONARQUBE_USER..."
+          PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U "$POSTGRES_USER" -d postgres <<EOF
+          GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $SONARQUBE_USER;
+          EOF
           
           echo "Database initialization for SonarQube completed."
         volumeMounts:
