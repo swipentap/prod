@@ -33,19 +33,24 @@ spec:
           ELAPSED=0
           
           # Wait for postgres to accept connections
-          # Try with password first (CloudNativePG should set it from secret)
+          # CloudNativePG with enableSuperuserAccess should set password from secret, but it might not be set initially
+          # Try with password first, then with empty password (trust auth), then set password if needed
           while [ $ELAPSED -lt $MAX_WAIT ]; do
+            # Try with password first (CloudNativePG should set it)
             if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
-              echo "PostgreSQL is ready!"
+              echo "PostgreSQL is ready (password auth)!"
               break
             fi
-            # Try with empty password (in case trust auth works initially)
+            # Try with empty password (trust auth might work initially)
             if PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
               echo "PostgreSQL is ready (trust auth), setting password..."
-              PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "ALTER ROLE postgres WITH PASSWORD '$SONARQUBE_PASSWORD';" 2>&1 || echo "Could not set postgres password"
+              PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "ALTER ROLE postgres WITH PASSWORD '$SONARQUBE_PASSWORD';" 2>&1
+              # Verify password works
               if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
-                echo "PostgreSQL is ready with password!"
+                echo "PostgreSQL password set successfully!"
                 break
+              else
+                echo "WARNING: Password set but connection failed, retrying..."
               fi
             fi
             echo "Waiting for PostgreSQL... (${ELAPSED}s/${MAX_WAIT}s)"
@@ -55,6 +60,12 @@ spec:
           
           if [ $ELAPSED -ge $MAX_WAIT ]; then
             echo "ERROR: Timeout waiting for PostgreSQL"
+            exit 1
+          fi
+          
+          # Final verification that we can connect with password
+          if ! PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
+            echo "ERROR: Cannot connect to PostgreSQL with password after wait"
             exit 1
           fi
           
