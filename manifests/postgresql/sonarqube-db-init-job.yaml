@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sonarqube-db-init
+  namespace: postgresql
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: postgresql
+      containers:
+      - name: db-init
+        image: postgres:15-alpine
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "Initializing database and role for SonarQube..."
+          
+          SONARQUBE_USER="sonarqube"
+          SONARQUBE_PASSWORD=$(cat /etc/postgresql-secret/password)
+          DB_NAME="sonar"
+          
+          echo "Waiting for PostgreSQL to be ready..."
+          until kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres -c '\q' 2>/dev/null; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          
+          echo "Creating role $SONARQUBE_USER if it doesn't exist..."
+          kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres <<EOF
+          DO \$\$
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$SONARQUBE_USER') THEN
+              CREATE ROLE $SONARQUBE_USER WITH LOGIN PASSWORD '$SONARQUBE_PASSWORD' CREATEDB;
+              RAISE NOTICE 'Role $SONARQUBE_USER created';
+            ELSE
+              ALTER ROLE $SONARQUBE_USER WITH PASSWORD '$SONARQUBE_PASSWORD' CREATEDB;
+              RAISE NOTICE 'Role $SONARQUBE_USER already exists, password updated';
+            END IF;
+          END
+          \$\$;
+          EOF
+          
+          echo "Creating database $DB_NAME if it doesn't exist..."
+          kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres <<EOF
+          SELECT 'CREATE DATABASE $DB_NAME OWNER $SONARQUBE_USER'
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
+          EOF
+          
+          echo "Granting all privileges on database $DB_NAME to $SONARQUBE_USER..."
+          kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres <<EOF
+          GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $SONARQUBE_USER;
+          EOF
+          
+          echo "Database initialization for SonarQube completed."
+        volumeMounts:
+        - name: postgresql-secret
+          mountPath: /etc/postgresql-secret
+          readOnly: true
+      volumes:
+      - name: postgresql-secret
+        secret:
+          secretName: postgresql-credentials
