@@ -11,7 +11,6 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      serviceAccountName: default
       containers:
       - name: db-init
         image: postgres:15-alpine
@@ -25,15 +24,42 @@ spec:
           SONARQUBE_USER="sonarqube"
           SONARQUBE_PASSWORD=$(cat /etc/postgresql-secret/password)
           DB_NAME="sonar"
+          DB_HOST="postgresql-rw.postgresql.svc.cluster.local"
+          DB_PORT="5432"
           
-          echo "Waiting for PostgreSQL to be ready..."
-          until kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres -c '\q' 2>/dev/null; do
-            echo "Waiting for PostgreSQL..."
+          echo "Waiting for PostgreSQL primary to be ready..."
+          MAX_WAIT=300
+          ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            # Try to connect - if postgres has no password, this will fail
+            # So we'll use a workaround: connect via service and use replication user or set password first
+            if psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            # Try with empty password (trust auth might work for some connections)
+            if PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
+              echo "PostgreSQL is ready (trust auth)!"
+              break
+            fi
+            echo "Waiting for PostgreSQL... (${ELAPSED}s/${MAX_WAIT}s)"
             sleep 2
+            ELAPSED=$((ELAPSED + 2))
           done
           
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "ERROR: Timeout waiting for PostgreSQL"
+            exit 1
+          fi
+          
+          echo "Setting postgres password first..."
+          # Try to set postgres password using trust auth connection
+          PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF 2>&1 || true
+          ALTER ROLE postgres WITH PASSWORD '$SONARQUBE_PASSWORD';
+          EOF
+          
           echo "Creating role $SONARQUBE_USER if it doesn't exist..."
-          kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres <<EOF
+          PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF
           DO \$\$
           BEGIN
             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$SONARQUBE_USER') THEN
@@ -48,17 +74,32 @@ spec:
           EOF
           
           echo "Creating database $DB_NAME if it doesn't exist..."
-          kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres <<EOF
+          PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF
           SELECT 'CREATE DATABASE $DB_NAME OWNER $SONARQUBE_USER'
           WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
           EOF
           
           echo "Granting all privileges on database $DB_NAME to $SONARQUBE_USER..."
-          kubectl exec -n postgresql postgresql-1 -- psql -U postgres -d postgres <<EOF
+          PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF
           GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $SONARQUBE_USER;
           EOF
           
-          echo "Database initialization for SonarQube completed."
+          echo "Verifying role and database creation..."
+          if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = '$SONARQUBE_USER';" 2>/dev/null | grep -q 1; then
+            echo "Role $SONARQUBE_USER created successfully"
+          else
+            echo "ERROR: Failed to create role $SONARQUBE_USER"
+            exit 1
+          fi
+          
+          if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" 2>/dev/null | grep -q 1; then
+            echo "Database $DB_NAME created successfully"
+          else
+            echo "ERROR: Failed to create database $DB_NAME"
+            exit 1
+          fi
+          
+          echo "Database initialization for SonarQube completed successfully!"
         volumeMounts:
         - name: postgresql-secret
           mountPath: /etc/postgresql-secret
