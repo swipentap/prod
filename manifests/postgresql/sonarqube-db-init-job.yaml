@@ -11,11 +11,12 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: db-init
       containers:
       - name: db-init
-        image: postgres:15-alpine
+        image: bitnami/kubectl:latest
         command:
-        - /bin/sh
+        - /bin/bash
         - -c
         - |
           set -e
@@ -24,42 +25,36 @@ spec:
           SONARQUBE_USER="sonarqube"
           SONARQUBE_PASSWORD=$(cat /etc/postgresql-secret/password)
           DB_NAME="sonar"
-          DB_HOST="postgresql-rw.postgresql.svc.cluster.local"
-          DB_PORT="5432"
           
-          echo "Waiting for PostgreSQL primary to be ready..."
+          echo "Waiting for PostgreSQL primary pod to be ready..."
           MAX_WAIT=300
           ELAPSED=0
+          PRIMARY_POD=""
           while [ $ELAPSED -lt $MAX_WAIT ]; do
-            # Try to connect - if postgres has no password, this will fail
-            # So we'll use a workaround: connect via service and use replication user or set password first
-            if psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
-              echo "PostgreSQL is ready!"
-              break
+            PRIMARY_POD=$(kubectl get pods -n postgresql -l cnpg.io/cluster=postgresql -o jsonpath='{.items[?(@.metadata.labels.cnpg\.io/role=="primary")].metadata.name}' 2>/dev/null | head -1)
+            if [ -n "$PRIMARY_POD" ]; then
+              if kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c '\q' 2>/dev/null; then
+                echo "PostgreSQL primary pod $PRIMARY_POD is ready!"
+                break
+              fi
             fi
-            # Try with empty password (trust auth might work for some connections)
-            if PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
-              echo "PostgreSQL is ready (trust auth)!"
-              break
-            fi
-            echo "Waiting for PostgreSQL... (${ELAPSED}s/${MAX_WAIT}s)"
+            echo "Waiting for PostgreSQL primary... (${ELAPSED}s/${MAX_WAIT}s)"
             sleep 2
             ELAPSED=$((ELAPSED + 2))
           done
           
-          if [ $ELAPSED -ge $MAX_WAIT ]; then
-            echo "ERROR: Timeout waiting for PostgreSQL"
+          if [ -z "$PRIMARY_POD" ]; then
+            echo "ERROR: Could not find PostgreSQL primary pod"
             exit 1
           fi
           
-          echo "Setting postgres password first..."
-          # Try to set postgres password using trust auth connection
-          PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF 2>&1 || true
-          ALTER ROLE postgres WITH PASSWORD '$SONARQUBE_PASSWORD';
-          EOF
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "ERROR: Timeout waiting for PostgreSQL primary"
+            exit 1
+          fi
           
           echo "Creating role $SONARQUBE_USER if it doesn't exist..."
-          PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF
+          kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres <<EOF
           DO \$\$
           BEGIN
             IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$SONARQUBE_USER') THEN
@@ -74,25 +69,25 @@ spec:
           EOF
           
           echo "Creating database $DB_NAME if it doesn't exist..."
-          PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF
+          kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres <<EOF
           SELECT 'CREATE DATABASE $DB_NAME OWNER $SONARQUBE_USER'
           WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
           EOF
           
           echo "Granting all privileges on database $DB_NAME to $SONARQUBE_USER..."
-          PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres <<EOF
+          kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres <<EOF
           GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $SONARQUBE_USER;
           EOF
           
           echo "Verifying role and database creation..."
-          if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = '$SONARQUBE_USER';" 2>/dev/null | grep -q 1; then
+          if kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = '$SONARQUBE_USER';" 2>/dev/null | grep -q 1; then
             echo "Role $SONARQUBE_USER created successfully"
           else
             echo "ERROR: Failed to create role $SONARQUBE_USER"
             exit 1
           fi
           
-          if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" 2>/dev/null | grep -q 1; then
+          if kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" 2>/dev/null | grep -q 1; then
             echo "Database $DB_NAME created successfully"
           else
             echo "ERROR: Failed to create database $DB_NAME"
