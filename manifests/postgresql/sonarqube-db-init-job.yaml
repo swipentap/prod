@@ -11,7 +11,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
-      serviceAccountName: postgresql
+      serviceAccountName: default
       containers:
       - name: db-init
         image: postgres:15-alpine
