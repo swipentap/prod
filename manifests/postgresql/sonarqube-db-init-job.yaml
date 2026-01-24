@@ -32,18 +32,21 @@ spec:
           MAX_WAIT=300
           ELAPSED=0
           
-          # Wait for postgres to accept connections (trust auth works for local, but we need password)
-          # Since postgres has no password initially, we'll wait for the service and then set password
+          # Wait for postgres to accept connections
+          # Try with password first (CloudNativePG should set it from secret)
           while [ $ELAPSED -lt $MAX_WAIT ]; do
-            # Try connecting - if it fails, postgres might not be ready or has no password
-            if psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
+            if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
               echo "PostgreSQL is ready!"
               break
             fi
-            # Try with empty password (trust auth might work)
+            # Try with empty password (in case trust auth works initially)
             if PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
-              echo "PostgreSQL is ready (trust auth)!"
-              break
+              echo "PostgreSQL is ready (trust auth), setting password..."
+              PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "ALTER ROLE postgres WITH PASSWORD '$SONARQUBE_PASSWORD';" 2>&1 || echo "Could not set postgres password"
+              if PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c '\q' 2>/dev/null; then
+                echo "PostgreSQL is ready with password!"
+                break
+              fi
             fi
             echo "Waiting for PostgreSQL... (${ELAPSED}s/${MAX_WAIT}s)"
             sleep 2
@@ -54,10 +57,6 @@ spec:
             echo "ERROR: Timeout waiting for PostgreSQL"
             exit 1
           fi
-          
-          # Set postgres password first if we can connect without password
-          echo "Setting postgres password..."
-          PGPASSWORD="" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "ALTER ROLE postgres WITH PASSWORD '$SONARQUBE_PASSWORD';" 2>&1 || echo "Could not set postgres password (might already be set)"
           
           echo "Creating role $SONARQUBE_USER if it doesn't exist..."
           if ! PGPASSWORD="$SONARQUBE_PASSWORD" psql -h "$DB_HOST" -p "$DB_PORT" -U postgres -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = '$SONARQUBE_USER';" 2>/dev/null | grep -q 1; then
