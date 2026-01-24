@@ -27,55 +27,68 @@ spec:
           DB_NAME="sonar"
           
           echo "Finding PostgreSQL primary pod..."
-          PRIMARY_POD=$(kubectl get pods -n postgresql -l cnpg.io/cluster=postgresql,role=primary -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-          if [ -z "$PRIMARY_POD" ]; then
-            PRIMARY_POD="postgresql-1"
-          fi
-          echo "Using PostgreSQL pod: $PRIMARY_POD"
-          
-          echo "Waiting for PostgreSQL pod to be ready..."
           MAX_WAIT=300
           ELAPSED=0
+          PRIMARY_POD=""
+          
           while [ $ELAPSED -lt $MAX_WAIT ]; do
-            if kubectl get pod -n postgresql "$PRIMARY_POD" -o jsonpath='{.status.phase}' 2>/dev/null | grep -q Running; then
-              echo "PostgreSQL pod $PRIMARY_POD is running!"
-              break
+            PRIMARY_POD=$(kubectl get pods -n postgresql -l cnpg.io/cluster=postgresql,role=primary -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+            if [ -z "$PRIMARY_POD" ]; then
+              PRIMARY_POD=$(kubectl get pods -n postgresql -l cnpg.io/cluster=postgresql --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
             fi
-            echo "Waiting for PostgreSQL pod... (${ELAPSED}s/${MAX_WAIT}s)"
+            if [ -z "$PRIMARY_POD" ]; then
+              PRIMARY_POD="postgresql-1"
+            fi
+            
+            if kubectl get pod -n postgresql "$PRIMARY_POD" -o jsonpath='{.status.phase}' 2>/dev/null | grep -q Running; then
+              if kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c '\q' 2>/dev/null; then
+                echo "PostgreSQL pod $PRIMARY_POD is ready and accepting connections!"
+                break
+              fi
+            fi
+            echo "Waiting for PostgreSQL pod to be ready... (${ELAPSED}s/${MAX_WAIT}s)"
             sleep 2
             ELAPSED=$((ELAPSED + 2))
           done
           
-          if [ $ELAPSED -ge $MAX_WAIT ]; then
-            echo "ERROR: Timeout waiting for PostgreSQL pod"
+          if [ -z "$PRIMARY_POD" ] || [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "ERROR: Timeout waiting for PostgreSQL pod to be ready"
             exit 1
           fi
           
+          echo "Using PostgreSQL pod: $PRIMARY_POD"
+          
           echo "Creating role $SONARQUBE_USER if it doesn't exist..."
-          kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres <<EOF
-          DO \$\$
-          BEGIN
-            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$SONARQUBE_USER') THEN
-              CREATE ROLE $SONARQUBE_USER WITH LOGIN PASSWORD '$SONARQUBE_PASSWORD' CREATEDB;
-              RAISE NOTICE 'Role $SONARQUBE_USER created';
-            ELSE
-              ALTER ROLE $SONARQUBE_USER WITH PASSWORD '$SONARQUBE_PASSWORD' CREATEDB;
-              RAISE NOTICE 'Role $SONARQUBE_USER already exists, password updated';
-            END IF;
-          END
-          \$\$;
-          EOF
+          if ! kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = '$SONARQUBE_USER';" 2>/dev/null | grep -q 1; then
+            echo "Role does not exist, creating it..."
+            kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "CREATE ROLE $SONARQUBE_USER WITH LOGIN PASSWORD '$SONARQUBE_PASSWORD' CREATEDB;" 2>&1 || {
+              echo "ERROR: Failed to create role"
+              exit 1
+            }
+          else
+            echo "Role exists, updating password..."
+            kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "ALTER ROLE $SONARQUBE_USER WITH PASSWORD '$SONARQUBE_PASSWORD' CREATEDB;" 2>&1 || {
+              echo "ERROR: Failed to update role"
+              exit 1
+            }
+          fi
           
           echo "Creating database $DB_NAME if it doesn't exist..."
-          kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres <<EOF
-          SELECT 'CREATE DATABASE $DB_NAME OWNER $SONARQUBE_USER'
-          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
-          EOF
+          if ! kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME';" 2>/dev/null | grep -q 1; then
+            echo "Database does not exist, creating it..."
+            kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "CREATE DATABASE $DB_NAME OWNER $SONARQUBE_USER;" 2>&1 || {
+              echo "ERROR: Failed to create database"
+              exit 1
+            }
+          else
+            echo "Database already exists"
+          fi
           
           echo "Granting all privileges on database $DB_NAME to $SONARQUBE_USER..."
-          kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres <<EOF
-          GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $SONARQUBE_USER;
-          EOF
+          kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $SONARQUBE_USER;" 2>&1 || {
+            echo "ERROR: Failed to grant privileges"
+            exit 1
+          }
           
           echo "Verifying role and database creation..."
           if kubectl exec -n postgresql "$PRIMARY_POD" -- psql -U postgres -d postgres -c "SELECT 1 FROM pg_roles WHERE rolname = '$SONARQUBE_USER';" 2>/dev/null | grep -q 1; then
