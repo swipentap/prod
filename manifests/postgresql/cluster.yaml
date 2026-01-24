@@ -39,11 +39,11 @@ spec:
     - name: sonarqube
       passwordSecret:
         name: postgresql-credentials
-        key: password
       inherit: true
       login: true
       superuser: false
       replication: false
+      createdb: true
   bootstrap:
     initdb:
       database: postgres
