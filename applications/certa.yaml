@@ -36,16 +36,9 @@ spec:
                     pathType: Prefix
             tls: []
           env:
-            ConnectionStrings__DefaultConnection: "Host=yb-tservers.yugabytedb:5433;Database=certa;Username=certa;Password=certa123;"
+            ConnectionStrings__DefaultConnection: "Host=postgresql-rw.postgresql.svc.cluster.local:5432;Database=certa;Username=certa;Password=certa123;"
           dbInit:
-            enabled: true
-            dbHost: yb-tservers.yugabytedb
-            dbPort: "5433"
-            adminUser: yugabyte
-            adminPassword: yugabyte
-            appUser: certa
-            appPassword: certa123
-            appDatabase: certa
+            enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: certa
