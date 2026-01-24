@@ -77,6 +77,28 @@ spec:
       - /spec/postgresql/syncReplicaElectionConstraint
       - /spec/managed
       - .spec.primaryUpdateMethod
+  ignoreDifferences:
+    - group: ""
+      kind: ServiceAccount
+      name: db-init
+      jsonPointers:
+        - /metadata/resourceVersion
+        - /metadata/uid
+        - /metadata/annotations
+    - group: rbac.authorization.k8s.io
+      kind: Role
+      name: db-init
+      jsonPointers:
+        - /metadata/resourceVersion
+        - /metadata/uid
+        - /metadata/annotations
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: db-init
+      jsonPointers:
+        - /metadata/resourceVersion
+        - /metadata/uid
+        - /metadata/annotations
       - .spec.primaryUpdateStrategy
       - .spec.replicationSlots
       - .spec.smartShutdownTimeout
