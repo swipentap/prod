@@ -25,14 +25,7 @@ spec:
         # PostgreSQL database configuration
         postgresql:
           enabled: false
-        # Use external PostgreSQL
-        externalDatabase:
-          host: postgresql-rw.postgresql.svc.cluster.local
-          port: 5432
-          database: rancher
-          user: rancher
-          password: rancher123
-        # Additional environment variables for database
+        # Use external PostgreSQL via environment variables
         extraEnv:
         - name: CATTLE_DB_HOST
           value: postgresql-rw.postgresql.svc.cluster.local
