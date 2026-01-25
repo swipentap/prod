@@ -43,6 +43,8 @@ spec:
           value: rancher123
         - name: CATTLE_DB_SSL_MODE
           value: disable
+        - name: CATTLE_SERVER_URL
+          value: https://rancher.dev.net
   destination:
     server: https://kubernetes.default.svc
     namespace: rancher
