@@ -22,6 +22,10 @@ spec:
             traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
         replicas: 1
         bootstrapPassword: admin
+        global:
+          cattle:
+            systemDefaultRegistry: ""
+        systemDefaultRegistry: ""
         # PostgreSQL database configuration
         postgresql:
           enabled: false
