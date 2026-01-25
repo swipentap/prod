@@ -20,6 +20,7 @@ spec:
           ingressClassName: traefik
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+        tls: external
         replicas: 1
         bootstrapPassword: admin
         global:
