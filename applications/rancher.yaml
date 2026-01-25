@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rancher
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://releases.rancher.com/server-charts/stable
+    chart: rancher
+    targetRevision: 2.13.1
+    helm:
+      releaseName: rancher
+      values: |
+        hostname: rancher.dev.net
+        ingress:
+          enabled: true
+          ingressClassName: traefik
+          annotations:
+            traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+        replicas: 1
+        bootstrapPassword: admin
+        # PostgreSQL database configuration
+        postgresql:
+          enabled: false
+        # Use external PostgreSQL
+        externalDatabase:
+          host: postgresql-rw.postgresql.svc.cluster.local
+          port: 5432
+          database: rancher
+          user: rancher
+          password: rancher123
+        # Additional environment variables for database
+        extraEnv:
+        - name: CATTLE_DB_HOST
+          value: postgresql-rw.postgresql.svc.cluster.local
+        - name: CATTLE_DB_PORT
+          value: "5432"
+        - name: CATTLE_DB_NAME
+          value: rancher
+        - name: CATTLE_DB_USER
+          value: rancher
+        - name: CATTLE_DB_PASS
+          value: rancher123
+        - name: CATTLE_DB_SSL_MODE
+          value: disable
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cattle-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
