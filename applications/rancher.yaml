@@ -46,6 +46,9 @@ spec:
           value: disable
         - name: CATTLE_SERVER_URL
           value: https://rancher.dev.net
+        # Disable post-delete hook to prevent it from deleting bootstrap-secret
+        postDelete:
+          enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: rancher
