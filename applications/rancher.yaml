@@ -62,3 +62,13 @@ spec:
   - group: rbac.authorization.k8s.io
     kind: ClusterRoleBinding
     name: rancher-post-delete
+  - group: batch
+    kind: Job
+    namespace: rancher
+    name: rancher-post-delete
+  - kind: ServiceAccount
+    namespace: rancher
+    name: rancher-post-delete
+  - kind: ConfigMap
+    namespace: rancher
+    name: rancher-post-delete
