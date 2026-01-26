@@ -55,3 +55,10 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+  ignoreDifferences:
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: rancher-post-delete
+  - group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+    name: rancher-post-delete
