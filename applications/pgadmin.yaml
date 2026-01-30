@@ -8,32 +8,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://helm.runix.net
-    chart: pgadmin4
-    targetRevision: 1.4.4
-    helm:
-      releaseName: pgadmin
-      values: |
-        image:
-          repository: dpage/pgadmin4
-          tag: latest
-        env:
-          email: admin@dev.net
-          password: admin
-        ingress:
-          enabled: true
-          className: traefik
-          annotations:
-            traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-          hosts:
-            - host: pgadmin.dev.net
-              paths:
-                - path: /
-                  pathType: Prefix
-          tls: []
-        persistence:
-          enabled: true
-          size: 1Gi
+    repoURL: https://github.com/swipentap/prod.git
+    targetRevision: main
+    path: manifests/pgadmin
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: pgadmin
@@ -43,3 +22,4 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+    - ServerSideApply=true
