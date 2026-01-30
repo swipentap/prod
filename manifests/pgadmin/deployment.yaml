@@ -32,6 +32,10 @@ spec:
             secretKeyRef:
               name: pgadmin-secret
               key: PGADMIN_DEFAULT_PASSWORD
+        - name: PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION
+          value: "False"
+        - name: PGADMIN_CONFIG_WTF_CSRF_CHECK_ENABLED
+          value: "False"
         volumeMounts:
         - name: pgadmin-data
           mountPath: /var/lib/pgadmin
