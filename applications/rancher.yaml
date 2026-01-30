@@ -57,7 +57,7 @@ spec:
           enabled: false
   destination:
     server: https://kubernetes.default.svc
-    namespace: rancher
+    namespace: cattle-system
   syncPolicy:
     automated:
       prune: true
@@ -73,11 +73,11 @@ spec:
     name: rancher-post-delete
   - group: batch
     kind: Job
-    namespace: rancher
+    namespace: cattle-system
     name: rancher-post-delete
   - kind: ServiceAccount
-    namespace: rancher
+    namespace: cattle-system
     name: rancher-post-delete
   - kind: ConfigMap
-    namespace: rancher
+    namespace: cattle-system
     name: rancher-post-delete
