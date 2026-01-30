@@ -6,6 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
+  backoffLimit: 3
   template:
     spec:
       serviceAccountName: db-init
@@ -39,4 +40,3 @@ spec:
           GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
           EOF
           echo "Database $DB_NAME and user $DB_USER created successfully"
-      backoffLimit: 3
