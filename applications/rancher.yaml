@@ -52,6 +52,8 @@ spec:
           value: disable
         - name: CATTLE_SERVER_URL
           value: https://rancher.dev.net
+        - name: CATTLE_DB_PROTO
+          value: postgres
         # Disable post-delete hook to prevent it from deleting bootstrap-secret
         postDelete:
           enabled: false
