@@ -36,24 +36,13 @@ spec:
         # PostgreSQL database configuration
         postgresql:
           enabled: false
-        # Use external PostgreSQL via environment variables
+        # Use external PostgreSQL via connection string (K3s format)
+        # Format: postgres://username:password@hostname:port/database-name
         extraEnv:
-        - name: CATTLE_DB_HOST
-          value: postgresql-rw.postgresql.svc.cluster.local
-        - name: CATTLE_DB_PORT
-          value: "5432"
-        - name: CATTLE_DB_NAME
-          value: rancher
-        - name: CATTLE_DB_USER
-          value: rancher
-        - name: CATTLE_DB_PASS
-          value: rancher123
-        - name: CATTLE_DB_SSL_MODE
-          value: disable
+        - name: CATTLE_DB_DATASOURCE
+          value: postgres://rancher:rancher123@postgresql-rw.postgresql.svc.cluster.local:5432/rancher?sslmode=disable
         - name: CATTLE_SERVER_URL
           value: https://rancher.dev.net
-        - name: CATTLE_DB_PROTO
-          value: postgres
         # Disable post-delete hook to prevent it from deleting bootstrap-secret
         postDelete:
           enabled: false
