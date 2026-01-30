@@ -36,6 +36,10 @@ spec:
           value: "False"
         - name: PGADMIN_CONFIG_WTF_CSRF_CHECK_ENABLED
           value: "False"
+        - name: PGADMIN_CONFIG_SERVER_MODE
+          value: "True"
+        - name: SQLALCHEMY_DATABASE_URI
+          value: "postgresql://pgadmin:pgadmin123@postgresql-rw.postgresql.svc.cluster.local:5432/pgadmin"
         volumeMounts:
         - name: pgadmin-data
           mountPath: /var/lib/pgadmin
