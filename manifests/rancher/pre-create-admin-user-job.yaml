@@ -35,21 +35,7 @@ spec:
             echo "Setting doesn't exist yet, will be created by Rancher on first start"
           }
           
-          echo "Ensuring bootstrap-secret exists (required by Rancher deployment)..."
-          # Check if secret exists
-          if ! kubectl get secret -n cattle-system bootstrap-secret >/dev/null 2>&1; then
-            echo "bootstrap-secret not found, creating it..."
-            # Create secret with resource-policy=keep to prevent Helm from deleting it
-            kubectl create secret generic -n cattle-system bootstrap-secret \
-              --from-literal=bootstrapPassword=admin \
-              --dry-run=client -o yaml | \
-            kubectl annotate --local -f - 'helm.sh/resource-policy=keep' 'argocd.argoproj.io/sync-wave=-2' --dry-run=client -o yaml | \
-            kubectl apply -f -
-          else
-            echo "bootstrap-secret already exists"
-            # Ensure annotations persist
-            kubectl annotate secret -n cattle-system bootstrap-secret 'helm.sh/resource-policy=keep' 'argocd.argoproj.io/sync-wave=-2' --overwrite || true
-          fi
+          echo "Note: bootstrap-secret is managed by rancher-bootstrap-secret ArgoCD application"
           
           # Check if admin user already exists
           EXISTING_USER=$(kubectl get users.management.cattle.io -l authz.management.cattle.io/bootstrapping=admin-user -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
@@ -107,27 +93,12 @@ spec:
             exit 1
           }
           
-          echo "Creating password secret for user: $ADMIN_USER_NAME"
-          # Generate password hash dynamically using the script
-          # Note: This requires the generate-rancher-password-secret.go script to be available
-          # For now, using a pre-generated hash - update this if password changes
-          # To generate new hash: go run scripts/generate-rancher-password-secret.go -password "admin" -username "temp"
-          PASSWORD_HASH="o8gt0v4EbcYkt4++y5NtfdgpsV4izHPCi7b0EQVyErc="
-          SALT_HASH="aRLXT9q3b91aQFuDw5BtOqMBzINVmHjHJCgxYqcLXL8="
-          
+          echo "Note: Password secret will be created by Rancher during bootstrap"
+          echo "The admin user is pre-created, Rancher will create the password secret automatically"
           kubectl create namespace cattle-local-user-passwords --dry-run=client -o yaml | kubectl apply -f -
           
-          kubectl create secret generic -n cattle-local-user-passwords "$ADMIN_USER_NAME" \
-            --from-literal=password="$PASSWORD_HASH" \
-            --from-literal=salt="$SALT_HASH" \
-            --dry-run=client -o yaml | \
-          kubectl annotate --local -f - cattle.io/password-hash=pbkdf2sha3512 --dry-run=client -o yaml | \
-          kubectl apply -f -
-          
-          kubectl annotate secret -n cattle-local-user-passwords "$ADMIN_USER_NAME" cattle.io/password-hash=pbkdf2sha3512 --overwrite
-          
-          echo "Admin user and password secret pre-created successfully!"
-          echo "Rancher will skip bootstrap and use existing user with password: admin"
+          echo "Admin user pre-created successfully!"
+          echo "Rancher will create the password secret during bootstrap with password from bootstrap-secret"
 ---
 apiVersion: v1
 kind: ServiceAccount
