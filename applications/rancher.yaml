@@ -33,14 +33,9 @@ spec:
           cattle:
             systemDefaultRegistry: ""
         systemDefaultRegistry: ""
-        # PostgreSQL database configuration
         postgresql:
           enabled: false
-        # Use external PostgreSQL via connection string (K3s format)
-        # Format: postgres://username:password@hostname:port/database-name
         extraEnv:
-        - name: CATTLE_DB_DATASOURCE
-          value: postgres://rancher:rancher123@postgresql-rw.postgresql.svc.cluster.local:5432/rancher?sslmode=disable
         - name: CATTLE_SERVER_URL
           value: https://rancher.dev.net
         # Disable post-delete hook to prevent it from deleting bootstrap-secret
