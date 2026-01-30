@@ -67,3 +67,6 @@ spec:
   - kind: ConfigMap
     namespace: cattle-system
     name: rancher-post-delete
+  - kind: Secret
+    namespace: cattle-system
+    name: bootstrap-secret
