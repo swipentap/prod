@@ -20,6 +20,12 @@ spec:
           ingressClassName: traefik
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+            cert-manager.io/cluster-issuer: rancher
+          tls:
+            enabled: true
+            hosts:
+            - rancher.dev.net
+            secretName: tls-rancher-ingress
         tls: external
         replicas: 1
         bootstrapPassword: admin
