@@ -44,5 +44,4 @@ spec:
             cpu: "1000m"
       volumes:
       - name: pgadmin-data
-        persistentVolumeClaim:
-          claimName: pgadmin-pvc
+        emptyDir: {}
