@@ -109,6 +109,7 @@ spec:
         key: cattle.io/os
         operator: Equal
         value: linux
+
 ---
 apiVersion: v1
 kind: Service
@@ -130,6 +131,7 @@ spec:
   selector:
     app: rancher
   type: ClusterIP
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -158,6 +160,7 @@ spec:
   - hosts:
     - rancher.dev.net
     secretName: tls-rancher-ingress
+
 ---
 apiVersion: v1
 data:
@@ -168,6 +171,7 @@ metadata:
     app: rancher
   name: rancher-config
   namespace: cattle-system
+
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -176,6 +180,7 @@ metadata:
     app: rancher
   name: rancher
   namespace: cattle-system
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -191,3 +196,15 @@ subjects:
 - kind: ServiceAccount
   name: rancher
   namespace: cattle-system
+
+---
+apiVersion: scheduling.k8s.io/v1
+description: Priority class used by pods critical to rancher's functionality.
+kind: PriorityClass
+metadata:
+  labels:
+    app: rancher
+  name: rancher-critical
+preemptionPolicy: PreemptLowerPriority
+value: 1000000000
+
