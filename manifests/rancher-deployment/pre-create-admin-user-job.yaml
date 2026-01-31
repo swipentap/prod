@@ -4,8 +4,8 @@ metadata:
   name: pre-create-rancher-admin-user
   namespace: cattle-system
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
-    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded,before-hook-creation
 spec:
   backoffLimit: 3
