@@ -4,9 +4,7 @@ metadata:
   name: pre-create-rancher-admin-user
   namespace: cattle-system
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: HookSucceeded,before-hook-creation
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   backoffLimit: 3
   template:
@@ -21,26 +19,11 @@ spec:
         - -c
         - |
           set -e
-          echo "Pre-creating admin user and password secret before Rancher bootstrap..."
+          echo "Pre-creating admin user and password secret after Rancher deployment is ready..."
           
-          # Wait for Rancher to be ready and CRDs to be available
-          echo "Waiting for Rancher to be ready..."
-          for i in {1..120}; do
-            # Check if Rancher pod is ready
-            RANCHER_READY=$(kubectl get pods -n cattle-system -l app=rancher -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "False")
-            if [ "$RANCHER_READY" = "True" ]; then
-              # Check if CRDs are available
-              if kubectl get crd users.management.cattle.io &>/dev/null; then
-                echo "Rancher is ready and CRDs are available!"
-                break
-              fi
-            fi
-            echo "Waiting for Rancher to be ready... ($i/120)"
-            sleep 5
-          done
-          
+          # Verify Rancher is ready (should be ready by sync-wave 10)
           if ! kubectl get crd users.management.cattle.io &>/dev/null; then
-            echo "ERROR: Rancher CRDs not available after 10 minutes"
+            echo "ERROR: Rancher CRDs not available"
             exit 1
           fi
           
