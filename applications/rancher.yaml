@@ -8,39 +8,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://releases.rancher.com/server-charts/stable
-    chart: rancher
-    targetRevision: 2.13.1
-    helm:
-      releaseName: rancher
-      values: |
-        hostname: rancher.dev.net
-        ingress:
-          enabled: true
-          ingressClassName: traefik
-          annotations:
-            traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-            cert-manager.io/cluster-issuer: rancher
-          tls:
-            enabled: true
-            hosts:
-            - rancher.dev.net
-            secretName: tls-rancher-ingress
-        tls: external
-        replicas: 1
-        bootstrapPassword: admin
-        global:
-          cattle:
-            systemDefaultRegistry: ""
-        systemDefaultRegistry: ""
-        postgresql:
-          enabled: false
-        extraEnv:
-        - name: CATTLE_SERVER_URL
-          value: https://rancher.dev.net
-        # Disable post-delete hook to prevent it from deleting bootstrap-secret
-        postDelete:
-          enabled: false
+    repoURL: https://github.com/swipentap/prod.git
+    targetRevision: main
+    path: manifests/rancher-deployment
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: cattle-system
@@ -50,6 +22,7 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+    - ServerSideApply=true
   ignoreDifferences:
   - group: rbac.authorization.k8s.io
     kind: ClusterRole
