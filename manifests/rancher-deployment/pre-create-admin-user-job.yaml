@@ -23,19 +23,24 @@ spec:
           set -e
           echo "Pre-creating admin user and password secret before Rancher bootstrap..."
           
-          # Wait for Rancher CRDs to be available
-          echo "Waiting for Rancher CRDs to be available..."
-          for i in {1..60}; do
-            if kubectl get crd users.management.cattle.io &>/dev/null; then
-              echo "Rancher CRDs are available!"
-              break
+          # Wait for Rancher to be ready and CRDs to be available
+          echo "Waiting for Rancher to be ready..."
+          for i in {1..120}; do
+            # Check if Rancher pod is ready
+            RANCHER_READY=$(kubectl get pods -n cattle-system -l app=rancher -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "False")
+            if [ "$RANCHER_READY" = "True" ]; then
+              # Check if CRDs are available
+              if kubectl get crd users.management.cattle.io &>/dev/null; then
+                echo "Rancher is ready and CRDs are available!"
+                break
+              fi
             fi
-            echo "Waiting for Rancher CRDs... ($i/60)"
+            echo "Waiting for Rancher to be ready... ($i/120)"
             sleep 5
           done
           
           if ! kubectl get crd users.management.cattle.io &>/dev/null; then
-            echo "ERROR: Rancher CRDs not available after 5 minutes"
+            echo "ERROR: Rancher CRDs not available after 10 minutes"
             exit 1
           fi
           
