@@ -23,6 +23,22 @@ spec:
           set -e
           echo "Pre-creating admin user and password secret before Rancher bootstrap..."
           
+          # Wait for Rancher CRDs to be available
+          echo "Waiting for Rancher CRDs to be available..."
+          for i in {1..60}; do
+            if kubectl get crd users.management.cattle.io &>/dev/null; then
+              echo "Rancher CRDs are available!"
+              break
+            fi
+            echo "Waiting for Rancher CRDs... ($i/60)"
+            sleep 5
+          done
+          
+          if ! kubectl get crd users.management.cattle.io &>/dev/null; then
+            echo "ERROR: Rancher CRDs not available after 5 minutes"
+            exit 1
+          fi
+          
           # Create the 'admincreated' ConfigMap to tell Rancher bootstrap is already done
           # This prevents Rancher from running bootstrap (see role_data.go line 438)
           echo "Creating 'admincreated' ConfigMap to skip Rancher bootstrap..."
