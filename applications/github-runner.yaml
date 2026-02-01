@@ -18,6 +18,7 @@ spec:
         authSecret:
           create: false
           name: controller-manager
+        certManagerEnabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: actions-runner-system
