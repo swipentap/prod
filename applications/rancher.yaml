@@ -22,7 +22,6 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
-    - ServerSideApply=true
   ignoreDifferences:
   - group: rbac.authorization.k8s.io
     kind: ClusterRole
@@ -43,31 +42,3 @@ spec:
   - kind: Secret
     namespace: cattle-system
     name: bootstrap-secret
-  - kind: PriorityClass
-    name: rancher-critical
-    jqPathExpressions:
-    - .metadata.labels
-  - group: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: pre-create-admin
-    jqPathExpressions:
-    - .metadata.labels
-  - group: rbac.authorization.k8s.io
-    kind: ClusterRoleBinding
-    name: pre-create-admin
-    jqPathExpressions:
-    - .metadata.labels
-  - kind: ServiceAccount
-    namespace: cattle-system
-    name: pre-create-admin
-    jqPathExpressions:
-    - .metadata.labels
-  - kind: Ingress
-    namespace: cattle-system
-    name: rancher
-    jqPathExpressions:
-    - .metadata.labels
-    - .metadata.annotations."nginx.ingress.kubernetes.io/proxy-connect-timeout"
-    - .metadata.annotations."nginx.ingress.kubernetes.io/proxy-read-timeout"
-    - .metadata.annotations."nginx.ingress.kubernetes.io/proxy-send-timeout"
-    - .metadata.annotations."nginx.ingress.kubernetes.io/ssl-redirect"
