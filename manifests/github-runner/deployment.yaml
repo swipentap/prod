@@ -19,10 +19,8 @@ spec:
         env:
         - name: RUNNER_NAME
           value: "k3s-prod-runner"
-        - name: RUNNER_ORG
-          value: "swipentap"
-        - name: RUNNER_REPO
-          value: "SiNS"
+        - name: REPO_URL
+          value: "https://github.com/swipentap/SiNS"
         - name: RUNNER_TOKEN
           valueFrom:
             secretKeyRef:
