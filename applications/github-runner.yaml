@@ -10,7 +10,6 @@ spec:
   source:
     repoURL: https://actions-runner-controller.github.io/actions-runner-controller
     chart: actions-runner-controller
-    targetRevision: latest
     helm:
       releaseName: actions-runner-controller
       values: |
