@@ -22,7 +22,8 @@ spec:
           echo "Pre-creating admin user and password secret after Rancher deployment is ready..."
           
           # Verify Rancher is ready (should be ready by sync-wave 10)
-          if ! kubectl get crd users.management.cattle.io &>/dev/null; then
+          # Check if CRDs are available by trying to list users (ServiceAccount has permission for this)
+          if ! kubectl get users.management.cattle.io &>/dev/null; then
             echo "ERROR: Rancher CRDs not available"
             exit 1
           fi
