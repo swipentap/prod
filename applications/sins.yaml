@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://swipentap.github.io/charts
     chart: sins
-    targetRevision: 1.0.82
+    targetRevision: 1.0.83
     helm:
       releaseName: sins-release
       values: |
@@ -30,11 +30,6 @@ spec:
             className: traefik
             annotations:
               traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-            hosts:
-              - host: ns.dev.net
-                paths:
-                  - path: /
-                    pathType: Prefix
             tls: []
           env:
             ConnectionStrings__DefaultConnection: "Host=postgresql-rw.postgresql.svc.cluster.local:5432;Database=dns_server;Username=sins;Password=sins123;"
@@ -59,6 +54,8 @@ spec:
             enabled: true
             host: postgresql-rw.postgresql.svc.cluster.local
             port: 5432
+        domain: "prod.net"
+        subdomain: "ns"
   destination:
     server: https://kubernetes.default.svc
     namespace: sins
