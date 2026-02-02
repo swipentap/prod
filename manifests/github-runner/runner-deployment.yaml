@@ -13,6 +13,7 @@ spec:
       group: k3s-prod
       labels:
         - k3s
+        - k3s-prod
       dockerdWithinRunnerContainer: true
       dockerEnabled: true
       image: summerwind/actions-runner-dind:latest
