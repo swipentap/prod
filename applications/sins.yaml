@@ -30,7 +30,10 @@ spec:
             className: traefik
             annotations:
               traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-            tls: []
+            tls:
+            - hosts:
+              - ns.prod.net
+              secretName: tls-prod-net-wildcard
           env:
             ConnectionStrings__DefaultConnection: "Host=postgresql-rw.postgresql.svc.cluster.local:5432;Database=dns_server;Username=sins;Password=sins123;"
           waitForPostgresql:
@@ -65,3 +68,7 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+  ignoreDifferences:
+  - kind: Ingress
+    jsonPointers:
+      - /status

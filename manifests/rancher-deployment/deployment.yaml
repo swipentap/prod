@@ -65,7 +65,7 @@ spec:
         - name: IMPERATIVE_API_APP_SELECTOR
           value: rancher
         - name: CATTLE_SERVER_URL
-          value: https://rancher.dev.net
+          value: https://rancher.prod.net
         image: rancher/rancher:v2.13.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -138,7 +138,6 @@ kind: Ingress
 metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    cert-manager.io/cluster-issuer: rancher
   labels:
     app: rancher
   name: rancher
@@ -146,7 +145,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-  - host: rancher.dev.net
+  - host: rancher.prod.net
     http:
       paths:
       - backend:
@@ -158,8 +157,8 @@ spec:
         pathType: ImplementationSpecific
   tls:
   - hosts:
-    - rancher.dev.net
-    secretName: tls-rancher-ingress
+    - rancher.prod.net
+    secretName: tls-prod-net-wildcard
 
 ---
 apiVersion: v1

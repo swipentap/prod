@@ -29,7 +29,10 @@ spec:
             className: traefik
             annotations:
               traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-            tls: []
+            tls:
+            - hosts:
+              - certa.prod.net
+              secretName: tls-prod-net-wildcard
           env:
             ConnectionStrings__DefaultConnection: "Host=postgresql-rw.postgresql.svc.cluster.local:5432;Database=certa;Username=certa;Password=certa123;"
           dbInit:
@@ -52,3 +55,7 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+  ignoreDifferences:
+  - kind: Ingress
+    jsonPointers:
+      - /status

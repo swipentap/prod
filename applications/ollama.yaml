@@ -20,7 +20,10 @@ spec:
             className: traefik
             annotations:
               traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-            tls: []
+            tls:
+            - hosts:
+              - ollama.prod.net
+              secretName: tls-prod-net-wildcard
         domain: "prod.net"
         subdomain: "ollama"
   destination:
@@ -32,3 +35,7 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+  ignoreDifferences:
+  - kind: Ingress
+    jsonPointers:
+      - /status
