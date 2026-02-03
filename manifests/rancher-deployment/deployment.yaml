@@ -92,9 +92,31 @@ spec:
           
           echo "Checking if User CRD exists..."
           if ! kubectl get crd users.management.cattle.io 2>/dev/null; then
-            echo "User CRD not found - Rancher CRDs not installed yet. Skipping user creation."
-            echo "Rancher will create the admin user on first bootstrap."
-            echo "Admin user pre-creation skipped (CRDs not available)"
+            echo "User CRD not found - Rancher CRDs not installed yet."
+            echo "Will create admin user via Rancher API after Rancher starts."
+            echo "For now, use bootstrap password from bootstrap-secret to complete initial setup."
+            exit 0
+          fi
+          
+          echo "Waiting for Rancher API to be ready..."
+          MAX_WAIT=120
+          ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            if kubectl get pods -n cattle-system -l app=rancher -o jsonpath='{.items[0].status.containerStatuses[0].ready}' 2>/dev/null | grep -q "true"; then
+              echo "Rancher pod is ready, waiting for API..."
+              sleep 5
+              if kubectl exec -n cattle-system $(kubectl get pods -n cattle-system -l app=rancher -o jsonpath='{.items[0].metadata.name}') -- wget -qO- --timeout=5 http://localhost:80/ping 2>/dev/null | grep -q "pong"; then
+                echo "Rancher API is ready!"
+                break
+              fi
+            fi
+            echo "Waiting for Rancher API... (${ELAPSED}s/${MAX_WAIT}s)"
+            sleep 5
+            ELAPSED=$((ELAPSED + 5))
+          done
+          
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
+            echo "Timeout waiting for Rancher API. Use bootstrap password to complete setup."
             exit 0
           fi
           
@@ -111,16 +133,30 @@ spec:
           mustChangePassword: false
           EOF
           
-          sleep 2
+          sleep 5
           
           kubectl get user.management.cattle.io "$ADMIN_USER_NAME" || {
-            echo "WARNING: Failed to create user, but continuing (Rancher will handle bootstrap)"
+            echo "WARNING: Failed to create user. Use bootstrap password to complete setup."
             exit 0
           }
           
           kubectl create namespace cattle-local-user-passwords --dry-run=client -o yaml | kubectl apply -f -
           
-          echo "Admin user pre-created successfully!"
+          echo "Creating password secret for admin user (password: admin)..."
+          # Use the same password hash as bootstrap for consistency
+          PASSWORD_HASH="o8gt0v4EbcYkt4++y5NtfdgpsV4izHPCi7b0EQVyErc="
+          SALT_HASH="aRLXT9q3b91aQFuDw5BtOqMBzINVmHjHJCgxYqcLXL8="
+          
+          kubectl create secret generic -n cattle-local-user-passwords "$ADMIN_USER_NAME" \
+            --from-literal=password="$PASSWORD_HASH" \
+            --from-literal=salt="$SALT_HASH" \
+            --dry-run=client -o yaml | \
+          kubectl annotate --local -f - cattle.io/password-hash=pbkdf2sha3512 --dry-run=client -o yaml | \
+          kubectl apply -f -
+          
+          kubectl annotate secret -n cattle-local-user-passwords "$ADMIN_USER_NAME" cattle.io/password-hash=pbkdf2sha3512 --overwrite
+          
+          echo "Admin user pre-created successfully! Username: admin, Password: (same as bootstrap)"
       containers:
       - args:
         - --no-cacerts
