@@ -35,7 +35,3 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
-  ignoreDifferences:
-  - kind: Ingress
-    jsonPointers:
-      - /status
