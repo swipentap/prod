@@ -42,3 +42,6 @@ spec:
   - kind: Secret
     namespace: cattle-system
     name: bootstrap-secret
+  - kind: Ingress
+    jsonPointers:
+      - /status
