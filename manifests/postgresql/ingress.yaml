@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-  - host: pgsql.dev.net
+  - host: pgsql.prod.net
     http:
       paths:
       - path: /
@@ -18,3 +18,7 @@ spec:
             name: postgresql-rw
             port:
               number: 5432
+  tls:
+  - hosts:
+    - pgsql.prod.net
+    secretName: tls-prod-net-wildcard
