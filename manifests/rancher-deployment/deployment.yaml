@@ -44,6 +44,76 @@ spec:
                   - rancher
               topologyKey: kubernetes.io/hostname
             weight: 100
+      initContainers:
+      - name: pre-create-admin-user
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Pre-creating admin user and password secret before Rancher bootstrap..."
+          
+          echo "Creating 'admincreated' ConfigMap to skip Rancher bootstrap..."
+          kubectl create configmap admincreated -n cattle-system \
+            --from-literal=created="true" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          
+          echo "Setting first-login setting to false to skip bootstrap screen..."
+          kubectl patch settings.management.cattle.io first-login -p '{"value":"false"}' --type=merge || {
+            echo "Setting doesn't exist yet, will be created by Rancher on first start"
+          }
+          
+          EXISTING_USER=$(kubectl get users.management.cattle.io -l authz.management.cattle.io/bootstrapping=admin-user -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING_USER" ]; then
+            echo "Admin user already exists: $EXISTING_USER"
+            echo "Setting mustChangePassword=false..."
+            kubectl patch user.management.cattle.io "$EXISTING_USER" -p '{"mustChangePassword":false}' --type=merge || true
+            
+            echo "Ensuring password secret exists for user: $EXISTING_USER"
+            PASSWORD_HASH="o8gt0v4EbcYkt4++y5NtfdgpsV4izHPCi7b0EQVyErc="
+            SALT_HASH="aRLXT9q3b91aQFuDw5BtOqMBzINVmHjHJCgxYqcLXL8="
+            
+            kubectl create namespace cattle-local-user-passwords --dry-run=client -o yaml | kubectl apply -f -
+            
+            kubectl create secret generic -n cattle-local-user-passwords "$EXISTING_USER" \
+              --from-literal=password="$PASSWORD_HASH" \
+              --from-literal=salt="$SALT_HASH" \
+              --dry-run=client -o yaml | \
+            kubectl annotate --local -f - cattle.io/password-hash=pbkdf2sha3512 --dry-run=client -o yaml | \
+            kubectl apply -f -
+            
+            kubectl annotate secret -n cattle-local-user-passwords "$EXISTING_USER" cattle.io/password-hash=pbkdf2sha3512 --overwrite
+            exit 0
+          fi
+          
+          ADMIN_USER_NAME="user-admin"
+          
+          echo "Creating admin User resource with mustChangePassword=false..."
+          kubectl apply -f - <<EOF
+          apiVersion: management.cattle.io/v3
+          kind: User
+          metadata:
+            name: $ADMIN_USER_NAME
+            labels:
+              authz.management.cattle.io/bootstrapping: admin-user
+          username: admin
+          displayName: Default Admin
+          mustChangePassword: false
+          EOF
+          
+          sleep 2
+          
+          kubectl get user.management.cattle.io "$ADMIN_USER_NAME" || {
+            echo "ERROR: Failed to create user"
+            exit 1
+          }
+          
+          kubectl create namespace cattle-local-user-passwords --dry-run=client -o yaml | kubectl apply -f -
+          
+          echo "Admin user pre-created successfully!"
+        serviceAccountName: pre-create-admin
       containers:
       - args:
         - --no-cacerts
