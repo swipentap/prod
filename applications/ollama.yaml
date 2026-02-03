@@ -24,6 +24,13 @@ spec:
             - hosts:
               - ollama.prod.net
               secretName: tls-prod-net-wildcard
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "200m"
+            limits:
+              memory: "3Gi"
+              cpu: "1"
         domain: "prod.net"
         subdomain: "ollama"
   destination:
