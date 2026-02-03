@@ -113,7 +113,6 @@ spec:
           kubectl create namespace cattle-local-user-passwords --dry-run=client -o yaml | kubectl apply -f -
           
           echo "Admin user pre-created successfully!"
-        serviceAccountName: pre-create-admin
       containers:
       - args:
         - --no-cacerts
