@@ -23,6 +23,8 @@ spec:
       labels:
         app: rancher
         release: rancher
+      annotations:
+        rancher.cattle.io/bootstrap-display: "true"
     spec:
       affinity:
         nodeAffinity:
