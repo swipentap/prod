@@ -23,8 +23,6 @@ spec:
       labels:
         app: rancher
         release: rancher
-      annotations:
-        rancher.cattle.io/bootstrap-display: "true"
     spec:
       affinity:
         nodeAffinity:
@@ -62,10 +60,6 @@ spec:
             secretKeyRef:
               key: bootstrapPassword
               name: bootstrap-secret
-        - name: IMPERATIVE_API_DIRECT
-          value: 'true'
-        - name: IMPERATIVE_API_APP_SELECTOR
-          value: rancher
         - name: CATTLE_SERVER_URL
           value: https://rancher.prod.net
         image: rancher/rancher:v2.13.1
